@@ -13,13 +13,7 @@ const STORAGE_KEYS = {
   TIMETABLE: 'hcs_timetable'
 };
 
-const defaultStudents: Student[] = [
-  { id: '1', regNumber: 'HCS-001', firstName: 'John', lastName: 'Doe', gender: 'M', dob: '2010-05-15', level: SchoolLevel.PRIMARY, gradeLevel: 'Class 4', parentName: 'Jane Doe', parentPhone: '0244123456', status: 'active' },
-  { id: '2', regNumber: 'HCS-002', firstName: 'Mary', lastName: 'Amoah', gender: 'F', dob: '2008-11-20', level: SchoolLevel.JHS, gradeLevel: 'Basic 8 (JHS 2)', parentName: 'Kofi Amoah', parentPhone: '0555987654', status: 'active' },
-  { id: '3', regNumber: 'HCS-003', firstName: 'Prince', lastName: 'Owusu', gender: 'M', dob: '2012-02-10', level: SchoolLevel.PRIMARY, gradeLevel: 'Class 2', parentName: 'Sarah Owusu', parentPhone: '0200111222', status: 'active' },
-  { id: '4', regNumber: 'HCS-004', firstName: 'Ama', lastName: 'Kyeremeh', gender: 'F', dob: '2011-08-05', level: SchoolLevel.PRIMARY, gradeLevel: 'Class 4', parentName: 'Peter Kyeremeh', parentPhone: '0243009988', status: 'active' },
-  { id: '5', regNumber: 'HCS-005', firstName: 'Samuel', lastName: 'Appiah', gender: 'M', dob: '2009-03-12', level: SchoolLevel.JHS, gradeLevel: 'Basic 7 (JHS 1)', parentName: 'Isaac Appiah', parentPhone: '0502334455', status: 'active' },
-];
+const defaultStudents: Student[] = [];
 
 const defaultFeeStructure: FeeStructure[] = [
   { id: 's1', gradeLevel: 'Class 1', tuition: 800, canteen: 400, others: 300, total: 1500 },
@@ -43,17 +37,9 @@ const defaultSubjects: Subject[] = [
   { id: 'sub10', name: 'Twi', levels: ['Primary', 'JHS'] },
 ];
 
-const defaultExams: Exam[] = [
-  { id: 'exam1', title: 'End of Term 1 Exams', startDate: '2024-12-12', endDate: '2024-12-18', type: 'Main Exam', status: 'Upcoming' },
-  { id: 'exam2', title: 'Mid-Term Assessment 2', startDate: '2024-10-24', endDate: '2024-10-26', type: 'Assessment', status: 'Grading' },
-  { id: 'exam3', title: 'JHS Mock Exams (Basic 9)', startDate: '2024-11-05', endDate: '2024-11-10', type: 'Mock', status: 'Upcoming' },
-];
+const defaultExams: Exam[] = [];
 
-const defaultTimetable: TimetableEntry[] = [
-  { id: 't1', gradeLevel: 'Class 1', day: 'Monday', startTime: '08:00', endTime: '09:00', subject: 'English Language', teacherId: 'teacher1' },
-  { id: 't2', gradeLevel: 'Class 1', day: 'Monday', startTime: '09:00', endTime: '10:00', subject: 'Mathematics', teacherId: 'teacher2' },
-  // Add more as needed
-];
+const defaultTimetable: TimetableEntry[] = [];
 
 export const dataService = {
   getStudents: async (): Promise<Student[]> => {
