@@ -1,0 +1,7 @@
+{
+  "name": "Holy Child Preparatory & JHS Student Management System",
+  "description": "A comprehensive school management platform for Primary and Junior High School levels, featuring student registration, attendance tracking, grading, fee management, and advanced analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
