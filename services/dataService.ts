@@ -1,6 +1,8 @@
 
 import { Student, AttendanceRecord, GradeRecord, FeeRecord, SchoolLevel, FeeTransaction, FeeStructure, Subject, Exam, TimetableEntry } from '../types';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const STORAGE_KEYS = {
   STUDENTS: 'hcs_students',
   ATTENDANCE: 'hcs_attendance',
@@ -44,7 +46,7 @@ const defaultTimetable: TimetableEntry[] = [];
 export const dataService = {
   getStudents: async (): Promise<Student[]> => {
     try {
-      const response = await fetch('http://localhost:5000/api/students');
+      const response = await fetch(`${API_BASE_URL}/api/students`);
       if (!response.ok) throw new Error('Failed to fetch students');
       return await response.json();
     } catch (error) {
@@ -62,7 +64,7 @@ export const dataService = {
   saveStudent: async (student: Student) => {
     try {
       const method = 'POST'; // Since id is always provided, but to create or update
-      const url = 'http://localhost:5000/api/students';
+      const url = `${API_BASE_URL}/api/students`;
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +87,7 @@ export const dataService = {
 
   deleteStudent: async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/students/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE_URL}/api/students/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete student');
     } catch (error) {
       console.error('Error deleting student:', error);
