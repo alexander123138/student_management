@@ -1,10 +1,11 @@
 
-import { Student, AttendanceRecord, GradeRecord, FeeRecord, SchoolLevel, FeeTransaction, FeeStructure, Subject, Exam, TimetableEntry } from '../types';
+import { Student, User, AttendanceRecord, GradeRecord, FeeRecord, SchoolLevel, FeeTransaction, FeeStructure, Subject, Exam, TimetableEntry } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const STORAGE_KEYS = {
   STUDENTS: 'hcs_students',
+  USERS: 'hcs_users',
   ATTENDANCE: 'hcs_attendance',
   GRADES: 'hcs_grades',
   FEES: 'hcs_fees',
@@ -17,14 +18,7 @@ const STORAGE_KEYS = {
 
 const defaultStudents: Student[] = [];
 
-const defaultFeeStructure: FeeStructure[] = [
-  { id: 's1', gradeLevel: 'Class 1', tuition: 800, canteen: 400, others: 300, total: 1500 },
-  { id: 's2', gradeLevel: 'Class 2', tuition: 800, canteen: 400, others: 300, total: 1500 },
-  { id: 's3', gradeLevel: 'Class 3', tuition: 800, canteen: 400, others: 300, total: 1500 },
-  { id: 's4', gradeLevel: 'Class 4', tuition: 800, canteen: 400, others: 300, total: 1500 },
-  { id: 's5', gradeLevel: 'Basic 7 (JHS 1)', tuition: 1200, canteen: 500, others: 300, total: 2000 },
-  { id: 's6', gradeLevel: 'Basic 8 (JHS 2)', tuition: 1200, canteen: 500, others: 300, total: 2000 },
-];
+const defaultFeeStructure: FeeStructure[] = [];
 
 const defaultSubjects: Subject[] = [
   { id: 'sub1', name: 'English Language', levels: ['Primary', 'JHS'] },
@@ -94,6 +88,56 @@ export const dataService = {
       // Fallback to localStorage
       const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]').filter((s: Student) => s.id !== id);
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+    }
+  },
+
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users`);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      // Fallback to localStorage
+      const data = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (!data) {
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]));
+        return [];
+      }
+      return JSON.parse(data);
+    }
+  },
+
+  saveUser: async (user: User) => {
+    try {
+      const method = 'POST'; // Since id is always provided, but to create or update
+      const url = `${API_BASE_URL}/api/users`;
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+      if (!response.ok) throw new Error('Failed to save user');
+    } catch (error) {
+      console.error('Error saving user:', error);
+      // Fallback to localStorage
+      const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+      const index = users.findIndex((u: User) => u.id === user.id);
+      if (index >= 0) users[index] = user;
+      else users.push(user);
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    }
+  },
+
+  deleteUser: async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete user');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      // Fallback to localStorage
+      const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]').filter((u: User) => u.id !== id);
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     }
   },
 

@@ -44,7 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, fees }) => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
             <Users size={24} />
@@ -61,7 +61,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, fees }) => {
           </div>
           <div>
             <p className="text-sm text-slate-500 font-medium">Teachers</p>
-            <h3 className="text-2xl font-bold text-slate-900">12</h3>
+            <h3 className="text-2xl font-bold text-slate-900">0</h3>
           </div>
         </div>
 
@@ -75,15 +75,6 @@ const Dashboard: React.FC<DashboardProps> = ({ students, fees }) => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
-            <AlertCircle size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">Pending Fees</p>
-            <h3 className="text-2xl font-bold text-slate-900">GHS {totalPending.toLocaleString()}</h3>
-          </div>
-        </div>
       </div>
 
       {/* Charts Section */}

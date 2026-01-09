@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
-import { Settings, School, User, Bell, Shield, Database, HelpCircle, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Settings, School, User, Bell, Shield, Database, HelpCircle, X, Camera, Upload, Trash2 } from 'lucide-react';
 import { SCHOOL_NAME } from '../constants';
+import { dataService } from '../services/dataService';
+import { User as UserType } from '../types';
 
 interface SettingsManagerProps {
   onNavigateToAcademics?: () => void;
@@ -23,22 +25,114 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // School Profile form state
-  const [schoolName, setSchoolName] = useState('Holy Child Preparatory & JHS');
-  const [schoolAddress, setSchoolAddress] = useState('P.O. Box 456, Sunyani, Ghana');
-  const [schoolPhone, setSchoolPhone] = useState('+233 244 556 677');
-  const [schoolEmail, setSchoolEmail] = useState('info@holychild.edu.gh');
+  const [schoolName, setSchoolName] = useState('');
+  const [schoolAddress, setSchoolAddress] = useState('');
+  const [schoolPhone, setSchoolPhone] = useState('');
+  const [schoolEmail, setSchoolEmail] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#1e3a8a');
   const [secondaryColor, setSecondaryColor] = useState('#f59e0b');
 
   // Academic Settings form state
-  const [gradingScale, setGradingScale] = useState('Letter Grades');
-  const [academicTerms, setAcademicTerms] = useState('3 Terms');
-  const [calendarYear, setCalendarYear] = useState('2023/2024');
+  const [gradingScale, setGradingScale] = useState('');
+  const [academicTerms, setAcademicTerms] = useState('');
+  const [calendarYear, setCalendarYear] = useState('');
 
   // User Management form state
   const [teacherName, setTeacherName] = useState('');
   const [teacherEmail, setTeacherEmail] = useState('');
-  const [teacherRole, setTeacherRole] = useState('Teacher');
+  const [teacherRole, setTeacherRole] = useState('TEACHER');
+  const [teacherAvatar, setTeacherAvatar] = useState<string | undefined>(undefined);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [existingUsers, setExistingUsers] = useState<UserType[]>([]);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+
+    if (isCameraActive) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+        .then((s) => {
+          stream = s;
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+          }
+        })
+        .catch((err) => {
+          console.error("Camera access error:", err);
+          setIsCameraActive(false);
+          alert("Could not access camera. Please check permissions.");
+        });
+    }
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraActive]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      const users = await dataService.getUsers();
+      setExistingUsers(users);
+    };
+    loadUsers();
+  }, []);
+
+  const handleCapture = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const avatar = canvas.toDataURL('image/jpeg');
+        setTeacherAvatar(avatar);
+        setIsCameraActive(false);
+      }
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTeacherAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teacherName || !teacherEmail) return;
+
+    const newUser: UserType = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: teacherName,
+      email: teacherEmail,
+      role: teacherRole as any,
+      avatar: teacherAvatar
+    };
+
+    await dataService.saveUser(newUser);
+    setExistingUsers([...existingUsers, newUser]);
+    setTeacherName('');
+    setTeacherEmail('');
+    setTeacherRole('TEACHER');
+    setTeacherAvatar(undefined);
+    setShowUserManagementModal(false);
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      await dataService.deleteUser(id);
+      setExistingUsers(existingUsers.filter(u => u.id !== id));
+    }
+  };
 
   // Notifications form state
   const [smsEnabled, setSmsEnabled] = useState(true);
@@ -111,6 +205,27 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
             </div>
           </button>
         ))}
+      </div>
+
+      <div className="bg-white p-6 rounded-3xl border border-slate-100">
+        <h4 className="text-lg font-bold text-slate-900 mb-4">User Management</h4>
+        <div className="max-h-96 overflow-y-scroll">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {existingUsers.map(user => (
+              <div key={user.id} className="bg-gray-50 p-4 rounded-lg">
+                <h5 className="font-medium">{user.name}</h5>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                <p className="text-sm text-gray-600">Role: {user.role}</p>
+                <button
+                  onClick={() => handleDeleteUser(user.id)}
+                  className="mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="text-center pt-8">
@@ -269,7 +384,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
       {/* User Management Modal */}
       {showUserManagementModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-y-auto shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
             <div className="p-8 bg-emerald-500 text-white">
               <div className="flex justify-between items-start">
                 <h3 className="text-xl font-black tracking-tight">User Management</h3>
@@ -278,10 +393,92 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
                 </button>
               </div>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); alert('Teacher account created!'); setTeacherName(''); setTeacherEmail(''); setTeacherRole('Teacher'); }} className="p-10 space-y-6">
+            <form onSubmit={handleUserSubmit} className="flex flex-col h-full">
+              <div className="flex-1 overflow-y-auto p-10 space-y-6">
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center gap-4 py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 max-h-64 overflow-y-auto">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                    {isCameraActive ? (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover mirror"
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                    ) : teacherAvatar ? (
+                      <img src={teacherAvatar} alt="User Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={48} className="text-slate-200" />
+                    )}
+                  </div>
+
+                  {!isCameraActive && (
+                    <div className="absolute -bottom-2 right-0 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraActive(true)}
+                        className="p-1.5 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all"
+                        title="Take Photo"
+                      >
+                        <Camera size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-1.5 bg-amber-500 text-white rounded-full shadow-lg hover:bg-amber-600 transition-all"
+                        title="Upload Photo"
+                      >
+                        <Upload size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {isCameraActive ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCapture}
+                      className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+                    >
+                      <Camera size={12} /> Capture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraActive(false)}
+                      className="px-3 py-1.5 bg-rose-500 text-white text-xs font-bold rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : teacherAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => setTeacherAvatar(undefined)}
+                    className="flex items-center gap-1 text-xs text-rose-500 font-semibold hover:underline"
+                  >
+                    <Trash2 size={10} /> Remove Avatar
+                  </button>
+                )}
+
+                {!isCameraActive && !teacherAvatar && (
+                  <p className="text-xs text-slate-400 font-medium">Add a profile avatar for the user</p>
+                )}
+              </div>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
+
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Teacher Name</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">User Name</label>
                   <input
                     type="text"
                     required
@@ -299,7 +496,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
                     className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-slate-700"
                     value={teacherEmail}
                     onChange={(e) => setTeacherEmail(e.target.value)}
-                    placeholder="teacher@holychild.edu.gh"
+                    placeholder="user@holychild.edu.gh"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -309,28 +506,37 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onNavigateToAcademics
                     value={teacherRole}
                     onChange={(e) => setTeacherRole(e.target.value)}
                   >
-                    <option>Admin (Full Access)</option>
-                    <option>Teacher (Edit Access)</option>
-                    <option>Staff (View Only)</option>
+                    <option value="ADMIN">Admin (Full Access)</option>
+                    <option value="TEACHER">Teacher (Edit Access)</option>
                   </select>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                   <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-2">Existing Users</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span>Dr. Mensah Arthur</span>
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded">Admin</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Mrs. Osei-Kyei</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Teacher</span>
-                    </div>
+                  <div className="space-y-2 text-sm max-h-96 overflow-y-scroll">
+                    {existingUsers.length > 0 ? existingUsers.map(user => (
+                      <div key={user.id} className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
+                          ) : (
+                            <User size={16} className="text-slate-400" />
+                          )}
+                          <span>{user.name}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded ${user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {user.role}
+                        </span>
+                      </div>
+                    )) : (
+                      <p className="text-xs text-slate-500">No users yet</p>
+                    )}
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowUserManagementModal(false)} className="flex-1 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Cancel</button>
-                <button type="submit" className="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest">Create Account</button>
+              </div>
+              <div className="flex gap-3 p-6 border-t border-slate-100 bg-white">
+                <button type="button" onClick={() => setShowUserManagementModal(false)} className="flex-1 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Cancel</button>
+                <button type="submit" className="flex-1 py-3 bg-emerald-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest">Create Account</button>
               </div>
             </form>
           </div>

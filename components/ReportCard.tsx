@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { X, Printer, BrainCircuit, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Printer, Edit3, Save, FileText } from 'lucide-react';
 import { Student, GradeRecord } from '../types';
-import { getStudentPerformanceInsights } from '../services/geminiService';
 import { SCHOOL_NAME } from '../constants';
 
 interface ReportCardProps {
@@ -11,22 +10,40 @@ interface ReportCardProps {
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({ student, onClose }) => {
-  const [aiInsight, setAiInsight] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableGradeLevel, setEditableGradeLevel] = useState(student.gradeLevel);
+  const [reopeningDate, setReopeningDate] = useState('January 15, 2025');
+  const [grades, setGrades] = useState<GradeRecord[]>([
+    { id: '1', studentId: student.id, subject: 'English Language', term: 1, score: 78, maxScore: 100, grade: 'A', classScore: 70 },
+    { id: '2', studentId: student.id, subject: 'Mathematics', term: 1, score: 85, maxScore: 100, grade: 'A', classScore: 80 },
+    { id: '3', studentId: student.id, subject: 'Science', term: 1, score: 62, maxScore: 100, grade: 'C', classScore: 55 },
+    { id: '4', studentId: student.id, subject: 'Social Studies', term: 1, score: 91, maxScore: 100, grade: 'A', classScore: 85 },
+  ] as any);
 
-  // Mock grades for this demo if none exist
-  const mockGrades: GradeRecord[] = [
-    { id: '1', studentId: student.id, subject: 'English Language', term: 1, score: 78, maxScore: 100, grade: 'A' },
-    { id: '2', studentId: student.id, subject: 'Mathematics', term: 1, score: 85, maxScore: 100, grade: 'A' },
-    { id: '3', studentId: student.id, subject: 'Science', term: 1, score: 62, maxScore: 100, grade: 'C' },
-    { id: '4', studentId: student.id, subject: 'Social Studies', term: 1, score: 91, maxScore: 100, grade: 'A' },
-  ];
+  const updateGrade = (id: string, score: number) => {
+    setGrades(grades.map(g => {
+      if (g.id === id) {
+        const newGrade = score >= 80 ? 'A' : score >= 60 ? 'B' : 'C';
+        return { ...g, score, grade: newGrade };
+      }
+      return g;
+    }));
+  };
 
-  const generateAIComment = async () => {
-    setLoading(true);
-    const insights = await getStudentPerformanceInsights(student, mockGrades);
-    setAiInsight(insights);
-    setLoading(false);
+  const updateSubject = (id: string, subject: string) => {
+    setGrades(grades.map(g => g.id === id ? { ...g, subject } : g));
+  };
+
+  const addSubject = () => {
+    setGrades([...grades, { id: Math.random().toString(), studentId: student.id, subject: 'New Subject', term: 1, score: 0, maxScore: 100, grade: 'F', classScore: 0 } as any]);
+  };
+
+  const removeSubject = (id: string) => {
+    setGrades(grades.filter(g => g.id !== id));
+  };
+
+  const updateClassScore = (id: string, classScore: number) => {
+    setGrades(grades.map(g => g.id === id ? { ...g, classScore } : g));
   };
 
   return (
@@ -39,14 +56,28 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, onClose }) => {
             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase rounded tracking-wider">Draft</span>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-all flex items-center gap-2 text-sm font-medium"
+            >
+              {isEditing ? <Save size={18} /> : <Edit3 size={18} />}
+              {isEditing ? 'Save' : 'Edit'}
+            </button>
+            <button
               onClick={() => window.print()}
               className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-all flex items-center gap-2 text-sm font-medium"
             >
               <Printer size={18} />
               Print
             </button>
-            <button 
+            <button
+              onClick={() => window.print()}
+              className="p-2 hover:bg-slate-200 rounded-lg text-slate-600 transition-all flex items-center gap-2 text-sm font-medium"
+            >
+              <FileText size={18} />
+              PDF
+            </button>
+            <button
               onClick={onClose}
               className="p-2 hover:bg-slate-200 rounded-lg text-slate-400"
             >
@@ -69,13 +100,24 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, onClose }) => {
               <p className="text-xs font-bold text-blue-900/50 uppercase tracking-widest mb-1">Student Details</p>
               <h4 className="text-xl font-bold text-slate-900">{student.firstName} {student.lastName}</h4>
               <p className="text-slate-600 text-sm font-medium">Reg No: {student.regNumber}</p>
-              <p className="text-slate-600 text-sm font-medium">Grade: {student.gradeLevel}</p>
+              <p className="text-slate-600 text-sm font-medium">
+                Grade: {isEditing ? (
+                  <input
+                    value={editableGradeLevel}
+                    onChange={(e) => setEditableGradeLevel(e.target.value)}
+                    className="bg-transparent border-b border-slate-300 focus:outline-none ml-1"
+                  />
+                ) : (
+                  editableGradeLevel
+                )}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-blue-900/50 uppercase tracking-widest mb-1">Session Info</p>
               <p className="text-slate-900 font-bold">Academic Year: 2023/2024</p>
               <p className="text-slate-600 font-medium">Term: 1st Term</p>
               <p className="text-slate-600 font-medium italic">Status: Completed</p>
+              <p className="text-slate-600 font-medium">Reopening Date: {isEditing ? <input value={reopeningDate} onChange={(e) => setReopeningDate(e.target.value)} className="bg-transparent border-b border-slate-300 focus:outline-none" /> : reopeningDate}</p>
             </div>
           </div>
 
@@ -85,15 +127,57 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, onClose }) => {
                 <th className="px-6 py-3 text-left font-bold text-sm uppercase tracking-wider rounded-tl-xl">Subject</th>
                 <th className="px-6 py-3 text-center font-bold text-sm uppercase tracking-wider">Score</th>
                 <th className="px-6 py-3 text-center font-bold text-sm uppercase tracking-wider">Max</th>
+                <th className="px-6 py-3 text-center font-bold text-sm uppercase tracking-wider">Class Score</th>
+                <th className="px-6 py-3 text-center font-bold text-sm uppercase tracking-wider">Total Score</th>
                 <th className="px-6 py-3 text-center font-bold text-sm uppercase tracking-wider rounded-tr-xl">Grade</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {mockGrades.map((grade) => (
+              {grades.map((grade) => (
                 <tr key={grade.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-slate-800 font-semibold">{grade.subject}</td>
-                  <td className="px-6 py-4 text-center text-slate-900 font-bold">{grade.score}</td>
+                  <td className="px-6 py-4 text-slate-800 font-semibold">
+                    {isEditing ? (
+                      <input
+                        value={grade.subject}
+                        onChange={(e) => updateSubject(grade.id, e.target.value)}
+                        className="w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1"
+                      />
+                    ) : (
+                      grade.subject
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center text-slate-900 font-bold">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={grade.score}
+                        onChange={(e) => updateGrade(grade.id, parseInt(e.target.value) || 0)}
+                        className="w-16 text-center bg-transparent border border-slate-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        min="0"
+                        max="100"
+                      />
+                    ) : (
+                      grade.score
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-center text-slate-500 font-medium">{grade.maxScore}</td>
+                  <td className="px-6 py-4 text-center text-slate-900 font-bold">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={grade.classScore}
+                        onChange={(e) => updateClassScore(grade.id, parseInt(e.target.value) || 0)}
+                        className="w-16 text-center bg-transparent border border-slate-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        min="0"
+                        max="100"
+                      />
+                    ) : (
+                      grade.classScore
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center text-slate-900 font-bold">
+                    {Math.round((grade.score + grade.classScore) / 2)}
+                  </td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-3 py-1 rounded-lg font-bold ${
                       grade.score >= 80 ? 'bg-emerald-100 text-emerald-700' :
@@ -107,69 +191,13 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, onClose }) => {
             </tbody>
           </table>
 
-          {/* AI Insights Section */}
-          <div className="bg-slate-900 text-white rounded-3xl p-8 mb-10 shadow-xl shadow-blue-900/10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              <BrainCircuit size={120} />
+          {isEditing && (
+            <div className="mt-4 text-center">
+              <button onClick={addSubject} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Add Subject
+              </button>
             </div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <h5 className="text-xl font-bold flex items-center gap-2">
-                  <BrainCircuit className="text-amber-500" />
-                  AI Performance Analysis
-                </h5>
-                {!aiInsight && !loading && (
-                  <button 
-                    onClick={generateAIComment}
-                    className="bg-amber-500 hover:bg-amber-400 text-blue-950 px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                  >
-                    Generate Insights
-                  </button>
-                )}
-              </div>
-
-              {loading ? (
-                <div className="flex items-center gap-3 text-slate-400 animate-pulse py-4">
-                  <Loader2 className="animate-spin" />
-                  <span>Synthesizing student data and generating professional feedback...</span>
-                </div>
-              ) : aiInsight ? (
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-amber-500 text-xs font-bold uppercase tracking-widest mb-2">Teacher's Professional Comment</p>
-                    <p className="text-slate-100 italic leading-relaxed text-lg">"{aiInsight.comment}"</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-3">Key Strengths</p>
-                      <ul className="space-y-1">
-                        {aiInsight.strengths.map((s: string, i: number) => (
-                          <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-rose-400 text-xs font-bold uppercase tracking-widest mb-3">Focus Areas</p>
-                      <ul className="space-y-1">
-                        {aiInsight.improvements.map((im: string, i: number) => (
-                          <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                            <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div>
-                            {im}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-400 text-sm">Click the button above to generate automated performance analysis using Google Gemini AI.</p>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Footer Signatures */}
           <div className="flex justify-between items-end mt-16 pt-12 border-t-2 border-slate-100">

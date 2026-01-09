@@ -18,4 +18,13 @@ CREATE TABLE students (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE users (
+  id VARCHAR(255) PRIMARY KEY,
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE,
+  role ENUM('ADMIN', 'TEACHER'),
+  avatar TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Add more tables as needed for attendance, academics, etc.

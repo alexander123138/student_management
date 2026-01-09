@@ -21,7 +21,11 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [students, setStudents] = useState<Student[]>([]);
   const [fees, setFees] = useState<FeeRecord[]>([]);
-  
+
+  // Login State
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
   // UI State
   const [isStudentFormOpen, setStudentFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | undefined>();
@@ -41,6 +45,10 @@ const App: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      alert('Please enter both email and password.');
+      return;
+    }
     setUser({
       id: 'admin-1',
       name: 'Dr. Mensah Arthur',
@@ -84,6 +92,8 @@ const App: React.FC = () => {
                 <input
                   type="email"
                   placeholder="Enter your email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                   className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-slate-400 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
                 />
               </div>
@@ -92,6 +102,8 @@ const App: React.FC = () => {
                 <input
                   type="password"
                   placeholder="Enter your password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
                   className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-slate-400 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
                 />
               </div>
